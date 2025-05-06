@@ -8,4 +8,4 @@ hooks:
   AfterInstall:
     - location: deploy_todo_app.sh
       timeout: 300
-      runas: ubuntu
+      runas: root
