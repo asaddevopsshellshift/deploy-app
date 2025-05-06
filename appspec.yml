@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /home/ubuntu/my-python-app-deploy
+
 hooks:
   AfterInstall:
     - location: deploy_todo_app.sh
