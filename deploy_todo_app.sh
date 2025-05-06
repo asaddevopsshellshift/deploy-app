@@ -2,7 +2,7 @@
 set -e
 
 # Application directory on EC2
-APP_DIR=~/my-python-app
+APP_DIR=/home/ubuntu/my-python-app-deploy
 VENV_DIR=$APP_DIR/venv
 
 # Update emojis for better visibility in logs
