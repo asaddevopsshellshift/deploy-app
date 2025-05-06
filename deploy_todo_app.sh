@@ -50,22 +50,25 @@ python3 -m venv "$VENV_DIR" --clear --system-site-packages || { echo "Error crea
 echo "📦 Installing dependencies inside virtualenv..."
 # Activate the venv relative to the current working directory ($APP_DIR)
 source "$VENV_DIR/bin/activate" || { echo "Error activating venv"; exit 1; }
+
 # Use the pip binary directly from the venv for clarity and robustness
 "$VENV_DIR/bin/pip" install --upgrade pip || { echo "Error upgrading pip"; exit 1; }
 
-# --- REMOVED CONFLICTING EXPLICIT FLASK INSTALL ---
-# The requirements.txt file should define the desired Flask version.
-# Installing Flask here explicitly conflicts with requirements.txt.
-# "$VENV_DIR/bin/pip" install flask==3.1.0 || { echo "Error installing flask"; exit 1; }
-# --------------------------------------------------
-
-# Install from requirements.txt
+# --- INSTALL DEPENDENCIES ONLY FROM requirements.txt ---
+# This is the SOLE source for Python package dependencies
 echo "Installing dependencies from requirements.txt..."
 if [ -f "requirements.txt" ]; then # Check for requirements.txt in the current directory ($APP_DIR)
     "$VENV_DIR/bin/pip" install -r requirements.txt || { echo "Error installing requirements.txt"; exit 1; }
 else
     echo "Warning: requirements.txt not found in $APP_DIR. Skipping dependency install from file."
 fi
+
+# --- Debug: List installed packages ---
+echo "--- Debug: Installed Python packages ---"
+"$VENV_DIR/bin/pip" list || { echo "Error listing installed packages"; exit 1; }
+echo "--- End Debug: Installed Python packages ---"
+# -------------------------------------
+
 deactivate # Deactivate venv after installation
 
 
@@ -77,6 +80,7 @@ deactivate # Deactivate venv after installation
 
 echo "🚀 Restarting the Flask application..."
 # Terminate any existing process associated with the app.py path in APP_DIR
+# Use the full path to app.py within the deployment directory
 sudo pkill -f "$APP_DIR/app.py" 2>/dev/null || true
 
 # Start the application with nohup
@@ -99,7 +103,8 @@ else
     echo "❌ Application failed to start. Check logs at $APP_DIR/app.log"
     # Print the log content directly for quicker debugging
     echo "--- Start of $APP_DIR/app.log ---"
-    cat "$APP_DIR/app.log"
+    # Use `cat -n` to include line numbers for easier debugging of the app.log content
+    cat -n "$APP_DIR/app.log"
     echo "--- End of $APP_DIR/app.log ---"
     exit 1
 fi
