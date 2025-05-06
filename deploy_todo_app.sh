@@ -42,9 +42,8 @@ mkdir -p "$APP_DIR/templates" # Ensures templates subdir exists inside APP_DIR
 
 
 echo "🔒 Creating virtual environment inside $APP_DIR..."
-# Use --clear for a fresh environment.
-# Keeping --system-site-packages as in original script for now.
-python3 -m venv "$VENV_DIR" --clear --system-site-packages || { echo "Error creating venv at $VENV_DIR"; exit 1; }
+# --- REMOVED --system-site-packages for better isolation ---
+python3 -m venv "$VENV_DIR" --clear || { echo "Error creating venv at $VENV_DIR"; exit 1; }
 
 
 echo "📦 Installing dependencies inside virtualenv..."
@@ -56,17 +55,19 @@ source "$VENV_DIR/bin/activate" || { echo "Error activating venv"; exit 1; }
 
 # --- INSTALL DEPENDENCIES ONLY FROM requirements.txt ---
 # This is the SOLE source for Python package dependencies
-echo "Installing dependencies from requirements.txt..."
+echo "Attempting to install dependencies from requirements.txt located at: $PWD/requirements.txt"
 if [ -f "requirements.txt" ]; then # Check for requirements.txt in the current directory ($APP_DIR)
-    "$VENV_DIR/bin/pip" install -r requirements.txt || { echo "Error installing requirements.txt"; exit 1; }
+    # Use -v for verbose output from pip to see *exactly* what it's doing
+    "$VENV_DIR/bin/pip" install -v -r requirements.txt || { echo "Error installing requirements.txt"; exit 1; }
 else
-    echo "Warning: requirements.txt not found in $APP_DIR. Skipping dependency install from file."
+    echo "Error: requirements.txt not found in $APP_DIR. Cannot install dependencies."
+    exit 1 # Exit with error if requirements.txt is missing
 fi
 
 # --- Debug: List installed packages ---
-echo "--- Debug: Installed Python packages ---"
+echo "--- Debug: Installed Python packages in VENV ---"
 "$VENV_DIR/bin/pip" list || { echo "Error listing installed packages"; exit 1; }
-echo "--- End Debug: Installed Python packages ---"
+echo "--- End Debug: Installed Python packages in VENV ---"
 # -------------------------------------
 
 deactivate # Deactivate venv after installation
@@ -100,7 +101,7 @@ if ps -p $PID > /dev/null; then
     echo "✅ Deployment complete! Visit: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8080/ (Public IP, requires internet access)"
     echo "✅ Deployment complete! Application is running on port 8080." # More general message
 else
-    echo "❌ Application failed to start. Check logs at $APP_DIR/app.log"
+    echo "❌ Application failed to start. Check logs at /home/ubuntu/my-python-app-deploy/app.log"
     # Print the log content directly for quicker debugging
     echo "--- Start of $APP_DIR/app.log ---"
     # Use `cat -n` to include line numbers for easier debugging of the app.log content
