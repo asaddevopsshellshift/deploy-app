@@ -12,7 +12,6 @@ echo "Starting working directory reported by CodeDeploy: $(pwd)"
 echo "Intended application destination directory (APP_DIR): $APP_DIR"
 echo "--- End Initial Debugging ---"
 
-
 # CHANGE WORKING DIRECTORY TO THE DEPLOYMENT DESTINATION
 # This is where CodeDeploy copied the application files
 echo "Changing working directory to deployment destination: $APP_DIR"
@@ -53,22 +52,27 @@ echo "📦 Installing dependencies inside virtualenv..."
 source "$VENV_DIR/bin/activate" || { echo "Error activating venv"; exit 1; }
 # Use the pip binary directly from the venv for clarity and robustness
 "$VENV_DIR/bin/pip" install --upgrade pip || { echo "Error upgrading pip"; exit 1; }
-# Pin Flask version for consistency (using version from your logs)
-"$VENV_DIR/bin/pip" install flask==3.1.0 || { echo "Error installing flask"; exit 1; }
-# Install from requirements.txt if it exists (requirements.txt is now in $APP_DIR)
+
+# --- REMOVED CONFLICTING EXPLICIT FLASK INSTALL ---
+# The requirements.txt file should define the desired Flask version.
+# Installing Flask here explicitly conflicts with requirements.txt.
+# "$VENV_DIR/bin/pip" install flask==3.1.0 || { echo "Error installing flask"; exit 1; }
+# --------------------------------------------------
+
+# Install from requirements.txt
+echo "Installing dependencies from requirements.txt..."
 if [ -f "requirements.txt" ]; then # Check for requirements.txt in the current directory ($APP_DIR)
     "$VENV_DIR/bin/pip" install -r requirements.txt || { echo "Error installing requirements.txt"; exit 1; }
+else
+    echo "Warning: requirements.txt not found in $APP_DIR. Skipping dependency install from file."
 fi
 deactivate # Deactivate venv after installation
 
 
-# --- REMOVED REDUNDANT FILE COPYING ---
+# --- REDUNDANT FILE COPYING SECTION REMAINS REMOVED ---
 # CodeDeploy's appspec.yml files: section already copied these files to $APP_DIR.
 # The cp commands here are no longer needed as we are operating *within* $APP_DIR.
-# echo "📝 Copying application files..."
-# cp "$PWD/app/app.py" "$APP_DIR/" || { echo "Error copying app/app.py"; exit 1; }
-# cp -r "$PWD/app/templates/"* "$APP_DIR/templates/" || { echo "Error copying app/templates"; exit 1; }
-# ------------------------------------
+# ----------------------------------------------------
 
 
 echo "🚀 Restarting the Flask application..."
@@ -78,6 +82,7 @@ sudo pkill -f "$APP_DIR/app.py" 2>/dev/null || true
 # Start the application with nohup
 # Ensure nohup binary is available (usually is)
 # Use the python interpreter from the venv and app.py from the current directory ($APP_DIR)
+# Use the full path to app.py relative to root if needed, but relative to current dir ($APP_DIR) is 'app/app.py'
 nohup "$VENV_DIR/bin/python" "app/app.py" > "$APP_DIR/app.log" 2>&1 &
 
 # Verify the application is running
@@ -92,5 +97,9 @@ if ps -p $PID > /dev/null; then
     echo "✅ Deployment complete! Application is running on port 8080." # More general message
 else
     echo "❌ Application failed to start. Check logs at $APP_DIR/app.log"
+    # Print the log content directly for quicker debugging
+    echo "--- Start of $APP_DIR/app.log ---"
+    cat "$APP_DIR/app.log"
+    echo "--- End of $APP_DIR/app.log ---"
     exit 1
 fi
