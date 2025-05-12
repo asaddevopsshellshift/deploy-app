@@ -1,3 +1,4 @@
 Flask==2.2.2
 requests
 Werkzeug<3.0.0
+kivy
