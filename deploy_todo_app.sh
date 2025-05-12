@@ -86,23 +86,6 @@ deactivate # Deactivate venv after installation
 
 echo "🚀 Starting/Restarting the Flask application on port $APP_PORT..."
 
-# --- STOP PREVIOUS INSTANCE USING lsof ---
-echo "Attempting to stop any process currently using port $APP_PORT..."
-# Find PIDs using the port and kill them
-PIDS_USING_PORT=$(sudo lsof -t -i :$APP_PORT -sTCP:LISTEN)
-
-if [ -z "$PIDS_USING_PORT" ]; then
-    echo "No process found listening on port $APP_PORT."
-else
-    echo "Found process(es) listening on port $APP_PORT with PID(s): $PIDS_USING_PORT. Attempting to kill..."
-    # Use kill -9 for a forceful kill to ensure the port is released quickly
-    sudo kill -9 $PIDS_USING_PORT 2>/dev/null || true
-    echo "Sent kill signal to PID(s): $PIDS_USING_PORT."
-    # Give a moment for the system to release the port
-    sleep 3
-fi
-# --- END STOP LOGIC ---
-
 
 # Start the application with nohup
 # Ensure nohup binary is available (usually is)
